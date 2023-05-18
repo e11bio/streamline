@@ -1,4 +1,18 @@
-# BigStream
+# Streamline
+
+BigStream customization for E11
+
+TODO:
+
+* allow dask array input for distributed align
+* non isotropic grid for deformable registration
+* Additional feedback on point registration
+* Better distributed write wait time management
+
+
+PS
+Please excuse the title pun.
+
 ---
 
 ![warp](resources/warp_interpolation.gif)
