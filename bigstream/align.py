@@ -719,6 +719,7 @@ def deformable_align(
     fix_origin=None,
     mov_origin=None,
     static_transform_list=[],
+    force_result=False,
     default=None,
     **kwargs,
 ):
@@ -842,8 +843,13 @@ def deformable_align(
     # set up registration object
     irm = configure_irm(**kwargs)
     # initial control point grid
-    z = control_point_spacing * control_point_levels[-1]
-    initial_cp_grid = [max(1, int(x*y/z)) for x, y in zip(fix.GetSize(), fix.GetSpacing())]
+    if type(control_point_spacing) in (tuple,list):
+        assert len(control_point_spacing)==fix.GetDimension(), "control_point_spacing must be a scalar or have length equal to number of image dimensions"
+        initial_cp_grid = [max(1, int(x*y/z)) for x, y, z in zip(fix.GetSize(), fix.GetSpacing(), np.array(control_point_spacing) * control_point_levels[-1])]
+    else:
+        z = control_point_spacing * control_point_levels[-1]
+        initial_cp_grid = [max(1, int(x*y/z)) for x, y in zip(fix.GetSize(), fix.GetSpacing())]
+    print(f"Shape initial control point grid - {[dim + str(num) for num, dim in zip(initial_cp_grid,['x:','y:','z:'])]}",flush=True)
     transform = sitk.BSplineTransformInitializer(
         image1=fix, transformDomainMeshSize=initial_cp_grid, order=3,
     )
@@ -884,14 +890,18 @@ def deformable_align(
 
     # if registration improved metric return result
     # otherwise return default
-    if final_metric_value < initial_metric_value:
+
+    if (final_metric_value < initial_metric_value) | force_result:
+        if (final_metric_value > initial_metric_value):
+            print(f"Warning Forcing result but registration appeared to have failed: METRIC VALUES initial: {initial_metric_value} final: {final_metric_value}",flush=True)
+        else:
+            print("Registration succeeded", flush=True)
         params = np.concatenate((transform.GetFixedParameters(), transform.GetParameters()))
         field = ut.bspline_to_displacement_field(
             transform, initial_fix_shape,
             spacing=initial_fix_spacing, origin=fix_origin,
             direction=np.eye(3),
         )
-        print("Registration succeeded", flush=True)
         return params, field
     else:
         print("Optimization failed to improve metric")
