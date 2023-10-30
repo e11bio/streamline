@@ -86,11 +86,6 @@ def apply_transform(
         ncores = psutil.cpu_count(logical=False)
     sitk.ProcessObject.SetGlobalDefaultNumberOfThreads(2*ncores)
 
-    # convert images to sitk objects
-    dtype = fix.dtype
-    fix = sitk.Cast(ut.numpy_to_sitk(fix, fix_spacing, fix_origin), sitk.sitkFloat32)
-    mov = sitk.Cast(ut.numpy_to_sitk(mov, mov_spacing, mov_origin), sitk.sitkFloat32)
-
     # construct transform
     fix_spacing = np.array(fix_spacing)
     if transform_spacing is None: transform_spacing = fix_spacing
@@ -101,7 +96,21 @@ def apply_transform(
     # set up resampler object
     resampler = sitk.ResampleImageFilter()
     resampler.SetNumberOfThreads(2*ncores)
-    resampler.SetReferenceImage(fix)
+
+    # set reference data
+    if isinstance(fix, tuple):
+        dtype = mov.dtype
+        resampler.SetSize(fix[::-1])
+        resampler.SetOutputSpacing(fix_spacing[::-1])
+        if fix_origin is not None:
+            resampler.SetOutputOrigin(fix_origin[::-1])
+    else:
+        dtype = fix.dtype
+        fix = sitk.Cast(ut.numpy_to_sitk(fix, fix_spacing, fix_origin), sitk.sitkFloat32)
+        resampler.SetReferenceImage(fix)
+
+    # set moving image and transform
+    mov = sitk.Cast(ut.numpy_to_sitk(mov, mov_spacing, mov_origin), sitk.sitkFloat32)
     resampler.SetTransform(transform)
 
     # check for NN interpolation

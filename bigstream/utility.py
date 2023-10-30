@@ -68,12 +68,14 @@ def numpy_to_sitk(image, spacing=None, origin=None, vector=False):
 
     # check endianness of data - some sitk operations seem to
     # only work with little endian
-    if str(image.dtype)[0] == '>':
-        error = "Array cannot be big endian. Convert arrays with ndarray.astype\n"
-        error += "Given array dtype is " + str(image.dtype)
-        raise TypeError(error)
-
-    image = sitk.GetImageFromArray(image, isVector=vector)
+    #if str(image.dtype)[0] == '>':
+    #    error = "Array cannot be big endian. Convert arrays with ndarray.astype\n"
+    #    error += "Given array dtype is " + str(image.dtype)
+    #    raise TypeError(error)
+    if isinstance(image, np.ndarray) and image.dtype == np.float64:
+        image = sitk.GetImageFromArray(image, isVector=vector) # adjusted to..astype('<u2')
+    else:
+        image = sitk.GetImageFromArray(image.astype('<u2'), isVector=vector) # adjusted to..astype('<u2')
     if spacing is None: spacing = np.ones(image.GetDimension())
     image.SetSpacing(spacing[::-1])
     if origin is None: origin = np.zeros(image.GetDimension())

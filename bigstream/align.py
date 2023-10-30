@@ -75,7 +75,7 @@ def feature_point_ransac_affine_align(
     mov_spacing,
     blob_sizes,
     num_sigma_max=15,
-    cc_radius=12,
+    cc_radius=[12],
     nspots=5000,
     match_threshold=0.7,
     align_threshold=2.0,
@@ -213,25 +213,42 @@ def feature_point_ransac_affine_align(
     mov_spots = mov_spots[sort_idx, :3][:nspots]
 
     # get contexts
-    print('extracting contexts', flush=True)
-    fix_spot_contexts = features.get_contexts(fix, fix_spots, cc_radius)
-    mov_spot_contexts = features.get_contexts(mov, mov_spots, cc_radius)
+    # Johan: Only un if threshold above 0
+    if match_threshold>0:
+        print('extracting contexts', flush=True)
+        """
+        # remove fix_spots where the context is out of bounds
+        def is_within_stack(point, stack_shape, radius):
+            radius+2
+            for i in range(3):
+                if point[i] - radius < 0 or point[i] + radius >= stack_shape[i]:
+                    return False
+            return True
 
-    # convert to physical units
-    fix_spots = fix_spots * fix_spacing
-    mov_spots = mov_spots * mov_spacing
+        fix_spots = [spot for spot in fix_spots if is_within_stack(spot, fix.shape, cc_radius)]
+        mov_spots = [spot for spot in mov_spots if is_within_stack(spot, mov.shape, cc_radius)]
+        """
 
-    # get point correspondences
-    print('computing pairwise correlations', flush=True)
-    correlations = features.pairwise_correlation(
-        fix_spot_contexts, mov_spot_contexts,
-    )
-    fix_spots, mov_spots = features.match_points(
-        fix_spots, mov_spots,
-        correlations, match_threshold,
-    )
-    print(f'{len(fix_spots)} matched fixed spots')
-    print(f'{len(mov_spots)} matched moving spots')
+        fix_spot_contexts = features.get_contexts(fix, fix_spots, cc_radius)
+        mov_spot_contexts = features.get_contexts(mov, mov_spots, cc_radius)
+
+        # convert to physical units
+        fix_spots = fix_spots * fix_spacing
+        mov_spots = mov_spots * mov_spacing
+
+        # get point correspondences
+        print('computing pairwise correlations', flush=True)
+        correlations = features.pairwise_correlation(
+            fix_spot_contexts, mov_spot_contexts,
+        )
+        fix_spots, mov_spots = features.match_points(
+            fix_spots, mov_spots,
+            correlations, match_threshold,
+        )
+        print(f'{len(fix_spots)} matched fixed spots')
+        print(f'{len(mov_spots)} matched moving spots')
+    else:
+        print("Not performing matching, using all spots",flush=True)
 
     # check spot counts
     if fix_spots.shape[0] < 50:
@@ -247,7 +264,7 @@ def feature_point_ransac_affine_align(
         fix_spots, mov_spots,
         ransacThreshold=align_threshold,
         confidence=0.999,
-        **kwargs,
+        #**kwargs,
     )
 
     # ensure affine is sensible

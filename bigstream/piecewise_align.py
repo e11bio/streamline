@@ -343,8 +343,24 @@ def distributed_piecewise_alignment_pipeline(
             # TODO: if a worker can query the set of running tasks, I may be able to skip
             #       groups that are completely written
             write_group = np.sum(np.array(block_index) % 3 * (9, 3, 1))
-            while not (write_group < time.time() / write_group_interval % 27 < write_group + .5):
-                time.sleep(1)
+            #while not (write_group < time.time() / write_group_interval % 27 < write_group + .5):
+            #    time.sleep(1)
+            loop_start_time = time.time()
+            last_update_time = loop_start_time
+
+            if write_group_interval>0:
+                while not (write_group < time.time() / write_group_interval % 27 < write_group + .5):
+                    current_time = time.time()
+                    
+                    if current_time - last_update_time >= 30:  # 30 seconds since last update
+                        print(f"Write group: {write_group} - Still waiting. Elapsed time: {current_time - loop_start_time:.2f} seconds.")
+                        last_update_time = current_time
+
+                    time.sleep(1)
+            else:
+                print("Not waiting on write groups",flush=True)
+
+
             output_transform[fix_slices] = output_transform[fix_slices] + transform
             return True
     # END CLOSURE
