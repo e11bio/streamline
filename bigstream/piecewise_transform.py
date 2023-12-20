@@ -152,6 +152,11 @@ def distributed_apply_transform(
             new_list.append(transform)
         transform_list = new_list
         transform_origin = tuple(transform_origin)
+        print(f"transform list n: {len(transform_list)}",flush=True)
+        for i, transform in enumerate(transform_list):
+            print(f"T{i} - transform: {transform.shape}",flush=True)
+            print(f"T{i} - spacing: {kwargs['transform_spacing'][i]}")
+
 
         # transform fixed block corners, read moving data
         fix_block_coords = []

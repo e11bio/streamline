@@ -167,7 +167,7 @@ def apply_transform_to_coordinates(
 
     # transform list should be a stack, last added is first applied
     for iii, transform in enumerate(transform_list[::-1]):
-
+        print(f"{iii} - transform: {transform.shape}",flush=True)
         # if transform is an affine matrix
         if transform.shape == (4, 4):
 
@@ -186,8 +186,11 @@ def apply_transform_to_coordinates(
             # handle multiple spacings and origins
             spacing = transform_spacing
             origin = transform_origin
-            if isinstance(spacing, tuple): spacing = spacing[iii]
-            if isinstance(origin, tuple): origin = origin[iii]
+            print(f"Len spacing: {len(spacing)}", flush=True)
+            print(f"accessing: {len(transform_list)-iii-1}",flush=True)
+            print(f"Value: {spacing[len(transform_list)-iii-1]}",flush=True)
+            if isinstance(spacing, tuple): spacing = spacing[len(transform_list)-iii-1]
+            if isinstance(origin, tuple): origin = origin[len(transform_list)-iii-1]
 
             # get coordinates in transform voxel units, reformat for map_coordinates
             if origin is not None: coordinates -= origin

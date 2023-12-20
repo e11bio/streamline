@@ -79,7 +79,7 @@ def numpy_to_sitk(image, spacing=None, origin=None, vector=False):
     if spacing is None: spacing = np.ones(image.GetDimension())
     image.SetSpacing(spacing[::-1])
     if origin is None: origin = np.zeros(image.GetDimension())
-    image.SetOrigin(origin[::-1])
+    image.SetOrigin(tuple(origin[::-1].astype('float')))
     return image
 
 
@@ -333,6 +333,8 @@ def field_to_displacement_field_transform(field, spacing=None, origin=None):
     """
 
     field = field.astype(np.float64)[..., ::-1]
+    print(f"field_to_displacement_field_transform - spacing: {spacing}",flush=True)
+    print(f"field_to_displacement_field_transform - origin: {origin}",flush=True)
     transform = numpy_to_sitk(field, spacing, origin, vector=True)
     return sitk.DisplacementFieldTransform(transform)
 
