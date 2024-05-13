@@ -219,7 +219,10 @@ def distributed_apply_transform(
 
     # return
     if write_path:
-        da.to_zarr(aligned, write_path, component=dataset_path)
+        aligned_rechunked = aligned.rechunk(fix_zarr.chunks)
+        da.to_zarr(aligned_rechunked, write_path, component=dataset_path,
+            compressor=fix_zarr.compressor,
+            )
         return zarr.open(write_path, 'r+')
     else:
         return aligned.compute()
